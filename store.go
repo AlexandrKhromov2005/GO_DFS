@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"strings"
@@ -37,6 +38,14 @@ type PathKey struct {
 	Original string // Original key
 }
 
+func (p PathKey) FirstPathName() string {
+	paths := strings.Split(p.PathName, "/")
+	if len(paths) == 0 {
+		return ""
+	}
+	return paths[0]
+}
+
 func (p PathKey) Filename() string {
 	return fmt.Sprintf("%s/%s", p.PathName, p.Original)
 }
@@ -59,6 +68,27 @@ func NewStore(opts StoreOpts) *Store {
 	}
 }
 
+func (s *Store) Has (key string) bool {
+	pathKey := s.PathTransformFunc(key)
+
+	_, err := os.Stat(pathKey.Filename())
+	return err == fs.ErrNotExist  
+}
+
+func (s *Store) Delete(key string) error {
+	pathKey := s.PathTransformFunc(key)
+
+	defer func() {
+		log.Printf("Deleted [%s] from disk", pathKey.Filename())
+	}()
+
+	// if err := os.RemoveAll(pathKey.Filename()); err != nil {
+	// 	return err
+	// }
+
+	return os.RemoveAll(pathKey.FirstPathName())
+}
+
 func (s *Store) Read(key string) (io.Reader, error) {
 	f, err := s.readStream(key)
 	if err != nil {
@@ -71,7 +101,7 @@ func (s *Store) Read(key string) (io.Reader, error) {
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, f)
 
-	return buf, nil
+	return buf, err
 }
 
 func (s *Store) readStream(key string) (io.ReadCloser, error) {
@@ -92,6 +122,8 @@ func (s *Store) writeStream(key string, r io.Reader) error {
 	if err != nil {
 		return err
 	}
+
+	defer f.Close()
 
 	n, err := io.Copy(f, r)
 	if err != nil {

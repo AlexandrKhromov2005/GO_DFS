@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"io"
 	"testing"
-)
+	"fmt"
+)   
 
 func TestPathTransformFunc(t *testing.T) {
 	key := "test_key"
@@ -21,6 +22,25 @@ func TestPathTransformFunc(t *testing.T) {
 	}
 }
 
+func TestDeleteKey (t *testing.T) {
+	opts := StoreOpts{
+		PathTransformFunc: CASPathTransformFunc,
+	}
+
+	s := NewStore(opts)
+	key := "test_key"
+	data := []byte("some jpg bytes")
+
+	if err := s.writeStream(key, bytes.NewReader(data)); err != nil {
+		t.Error(err)
+	}
+
+	if err := s.Delete(key); err != nil {
+		t.Error(err)
+	}
+
+}
+
 func TestStore(t *testing.T) {
 	opts := StoreOpts{
 		PathTransformFunc: CASPathTransformFunc,
@@ -30,7 +50,7 @@ func TestStore(t *testing.T) {
 	key := "test_key"
 	data := []byte("some jpg bytes")
 
-	if err := s.writeStream("test_key", bytes.NewReader(data)); err != nil {
+	if err := s.writeStream(key, bytes.NewReader(data)); err != nil {
 		t.Error(err)
 	}
 
@@ -40,6 +60,8 @@ func TestStore(t *testing.T) {
 	}
 
 	b, _ := io.ReadAll(r)
+
+	fmt.Println(string(b))
 
 	if !bytes.Equal(b, data) {
 		t.Errorf("Expected %s, got %s", data, b)
