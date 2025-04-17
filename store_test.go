@@ -2,9 +2,9 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"testing"
-	"fmt"
 )   
 
 func TestPathTransformFunc(t *testing.T) {
@@ -54,16 +54,21 @@ func TestStore(t *testing.T) {
 		t.Error(err)
 	}
 
+	if ok := s.Has(key); !ok {
+		t.Errorf("Expected key %s to exist", key)
+	}
+
 	r, err := s.Read(key)
 	if err != nil {
 		t.Error(err)
 	}
 
 	b, _ := io.ReadAll(r)
+	if !bytes.Equal(b, data) {
+		t.Errorf("Expected %s, got %s", data, b)
+	}
 
 	fmt.Println(string(b))
 
-	if !bytes.Equal(b, data) {
-		t.Errorf("Expected %s, got %s", data, b)
-	}	
-}
+ 	s.Delete(key)
+} 
