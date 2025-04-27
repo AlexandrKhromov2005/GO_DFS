@@ -9,47 +9,43 @@ import (
 	"github.com/AlexandrKhromov2005/GO_DFS/p2p"
 )
 
-func makeServer (listenAddr string, nodes ...string) *FileServer {
-	tcptransportOpts := p2p.TCPTransportOpts{
+func makeServer(listenAddr string, nodes ...string) *FileServer {
+	tcpTransportOpts := p2p.TCPTransportOpts{
 		ListenAddr: listenAddr,
 		HandshakeFunc: p2p.NOPHandshakeFunc,
-		Decoder: &p2p.GOBDecoder{},
-		//OnPeer: nil,
- 
+		Decoder: p2p.DefaultDecoder{},
 	}
 
-	tcptransport := p2p.NewTCPTransport(tcptransportOpts)
+	tcpTransport := p2p.NewTCPTransport(tcpTransportOpts)
 
 	fileServerOpts := FileServerOpts{
-		StorageRoot:      strings.ReplaceAll(listenAddr, ":", "_") + "_network",		PathTransformFunc: CASPathTransformFunc,
-		Transport:        tcptransport,
-		BootstrapNodes:   nodes,
+		StorageRoot:       strings.ReplaceAll(listenAddr, ":", "") + "_network" ,
+		PathTransformFunc: CASPathTransformFunc,
+		Transport:       tcpTransport,
+		BootstrapNodes: nodes,
 	}
-
 	s := NewFileServer(fileServerOpts)
-
-	tcptransport.OnPeer = s.OnPeer
+	tcpTransport.OnPeer = s.OnPeer
 
 	return s
-}	
+}
 
 func main() {
-    s1 := makeServer(":3000", "")
-    s2 := makeServer(":4000", ":3000")
-
-    go func() {
-        log.Fatal(s1.Start())
-    }()
+	s1 := makeServer(":3000", "")
+	s2 := makeServer(":4000", ":3000")
 
 
-    go s2.Start()
-    time.Sleep(1 * time.Second)
+	go func() {
+		log.Fatal(s1.Start())
+	}()
+	time.Sleep(1 * time.Second)
 
-    data := bytes.NewReader([]byte("my big data file here!"))
 
-    if err := s2.StoreData("myprivatedata", data); err != nil {
-        log.Fatal(err)
-    }
+	go s2.Start()
+	time.Sleep(1 * time.Second)
 
-	select {}
+	data := bytes.NewReader([]byte("my big data file here!"))
+	s2.StoreData("myprivatedata", data)
+
+	select{}
 }

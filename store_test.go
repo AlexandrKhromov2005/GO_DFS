@@ -5,20 +5,21 @@ import (
 	"fmt"
 	"io"
 	"testing"
-)  
+)
+
+
 
 func TestPathTransformFunc(t *testing.T) {
-	key := "test_key"
+	key := "momsbestpicture"
 	pathKey := CASPathTransformFunc(key)
-	expectedOriginalKey := "00942f4668670f34c5943cf52c7ef3139fe2b8d6"
-	expectedPathName := "00942/f4668/670f3/4c594/3cf52/c7ef3/139fe/2b8d6"
+	expectedPathName := "68044/29f74/181a6/3c50c/3d81d/733a1/2f14a/353ff" 
+	expectedFileName := "6804429f74181a63c50c3d81d733a12f14a353ff" 
 
 	if pathKey.PathName != expectedPathName {
-		t.Errorf("Expected %s, got %s", expectedPathName, expectedPathName)
+		t.Errorf("have %s, want this %s", pathKey.PathName, expectedPathName)
 	}
-
-	if pathKey.Original != expectedOriginalKey {
-		t.Errorf("Expected %s, got %s", pathKey.Original, expectedOriginalKey)
+	if pathKey.FileName != expectedFileName {
+		t.Errorf("have %s, want this %s", pathKey.FileName, expectedFileName)
 	}
 }
 
@@ -27,16 +28,14 @@ func TestStore(t *testing.T) {
 	defer teardown(t, s)
 
 	for i := 0; i < 50; i++ {
-
 		key := fmt.Sprintf("foo_%d", i)
-		data := []byte("some jpg bytes")
-
+		data :=[]byte("some jpg bytes")
 		if err := s.writeStream(key, bytes.NewReader(data)); err != nil {
 			t.Error(err)
 		}
 
 		if ok := s.Has(key); !ok {
-			t.Errorf("Expected key %s to exist", key)
+			t.Errorf("expected to have key %s", key)
 		}
 
 		r, err := s.Read(key)
@@ -45,8 +44,9 @@ func TestStore(t *testing.T) {
 		}
 
 		b, _ := io.ReadAll(r)
-		if !bytes.Equal(b, data) {
-			t.Errorf("Expected %s, got %s", data, b)
+
+		if string(b) != string(data) {
+			t.Errorf("want %s, have %s", data, b)
 		}
 
 		fmt.Println(string(b))
@@ -56,15 +56,16 @@ func TestStore(t *testing.T) {
 		}
 
 		if ok := s.Has(key); ok {
-			t.Errorf("Expected key %s to not exist", key)
+			t.Errorf("expected to NOT have key %s", key)
 		}
 	}
-} 
+}
 
 func newStore() *Store {
 	opts := StoreOpts{
 		PathTransformFunc: CASPathTransformFunc,
 	}
+
 	return NewStore(opts)
 }
 
@@ -72,4 +73,4 @@ func teardown(t *testing.T, s *Store) {
 	if err := s.Clear(); err != nil {
 		t.Error(err)
 	}
-}
+}	

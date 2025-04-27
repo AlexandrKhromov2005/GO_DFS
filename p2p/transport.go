@@ -2,17 +2,17 @@ package p2p
 
 import "net"
 
-//remote node
-type Peer interface{
-	Send([]byte) error
+//Peer is an interface that represents the remote node
+type Peer interface {
 	net.Conn
+	Send([]byte) error
 }
 
 
-//anything for communicattion between nodes
+//Transport is anything that handles communication between peers
 type Transport interface {
 	Dial(string) error
-	ListenAndAccept() error
-	Consume() <-chan RPC
+	ListenAndAccept()	error
+	Consume() <- chan RPC
 	Close() error
 }
